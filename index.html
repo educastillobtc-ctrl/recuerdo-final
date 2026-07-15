@@ -533,11 +533,12 @@ function componer(conMarca){
   textoCentrado('ENTRADA CONMEMORATIVA', TY+140, '700 34px Archivo', '#8f0815');
   const tituloGrande = MODO_CAMPEONES ? 'CAMPEONES' : 'LA GRAN FINAL';
   textoCentrado(tituloGrande, TY+240, '900 96px "Archivo Black"', '#1a1a1a', TW-120);
-  const subTitulo = MODO_CAMPEONES ? 'DEL MUNDO · 19 · JULIO · 2026' : '19 · JULIO · 2026  ·  21:00';
-  textoCentrado(subTitulo, TY+308, '700 40px Archivo', '#8f0815', TW-140);
+  const subTitulo = MODO_CAMPEONES ? 'DEL MUNDO · FÚTBOL · 19 · 07 · 2026' : 'DEL FÚTBOL MUNDIAL · 19 · 07 · 2026 · 21:00';
+  textoCentrado(subTitulo, TY+298, '700 36px Archivo', '#8f0815', TW-140);
+  textoCentrado('ESTADIO METLIFE · NUEVA JERSEY (EE. UU.)', TY+344, '600 28px Archivo', '#6b6250', TW-140);
 
   ctx.strokeStyle='#d9cdb0'; ctx.setLineDash([12,10]); ctx.lineWidth=3;
-  ctx.beginPath(); ctx.moveTo(TX+60,TY+360); ctx.lineTo(TX+TW-60,TY+360); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(TX+60,TY+378); ctx.lineTo(TX+TW-60,TY+378); ctx.stroke();
   ctx.setLineDash([]);
 
   const numEntrada = 'Nº ' + (100000 + (d.nombre.length*d.ciudad.length*777)%899999);
