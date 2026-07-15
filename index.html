@@ -161,7 +161,7 @@
       <h2>1 · Rellena tu entrada</h2>
 
       <label for="nombre">Tu nombre</label>
-      <input type="text" id="nombre" maxlength="26" placeholder="Ej: Eduardo" autocomplete="off">
+      <input type="text" id="nombre" maxlength="26" placeholder="Ej: Lucía" autocomplete="off">
 
       <label for="lugar" id="uiLabelLugar">¿Desde dónde la vives?</label>
       <select id="lugar">
@@ -297,11 +297,20 @@ $('quitarFoto').addEventListener('click', () => {
   dibujar();
 });
 
+function limpiaLugar(s){
+  // La entrada dice "VIVIÓ LA FINAL DESDE ..." — se quitan preposiciones que la duplicarían:
+  // "En el jardín" → "el jardín" · "Desde mi bar" → "mi bar"
+  let t = s.trim().replace(/\s+/g, ' ');
+  t = t.replace(/^desde\s+/i, '');
+  t = t.replace(/^en\s+/i, '');
+  return t || 'Mi sitio favorito';
+}
+
 function datos(){
   const lugarSel = $('lugar').value;
   return {
     nombre: ($('nombre').value.trim() || 'UN AFICIONADO').toUpperCase(),
-    lugar: (lugarSel === 'otro' ? ($('lugarOtro').value.trim() || 'Mi sitio favorito') : lugarSel),
+    lugar: (lugarSel === 'otro' ? limpiaLugar($('lugarOtro').value) : lugarSel),
     ciudad: ($('ciudad').value.trim() || 'España').toUpperCase(),
     pronostico: $('pronostico').value.trim(),
     dedicatoria: $('dedicatoria').value.trim()
