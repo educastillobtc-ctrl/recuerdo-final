@@ -91,6 +91,16 @@
   }
   .acciones{display:flex;gap:10px;max-width:380px;margin:14px auto 0}
   .acciones .btn{margin-top:0}
+  .reto{max-width:380px;margin:12px auto 0;font-size:.85rem;opacity:.88;text-align:left}
+  .reto strong{color:var(--amarillo)}
+  .btn-audio{
+    position:fixed;bottom:16px;right:16px;z-index:10;
+    background:rgba(0,0,0,.55);color:var(--crema);
+    border:1px solid rgba(255,196,0,.5);border-radius:999px;
+    padding:10px 16px;font-family:inherit;font-weight:600;font-size:.85rem;
+    cursor:pointer;backdrop-filter:blur(4px);
+  }
+  .btn-audio:hover{border-color:var(--amarillo)}
   .cta-hd{
     max-width:380px;margin:18px auto 0;background:rgba(0,0,0,.35);
     border:1px dashed var(--amarillo);border-radius:12px;padding:14px 16px;font-size:.88rem;text-align:left;
@@ -166,7 +176,7 @@
       <label for="ciudad">Tu ciudad</label>
       <input type="text" id="ciudad" maxlength="24" placeholder="Ej: Albacete" autocomplete="off">
 
-      <label for="pronostico" id="uiLabelPron">Tu pronóstico (opcional)</label>
+      <label for="pronostico" id="uiLabelPron">Tu porra (opcional)</label>
       <input type="text" id="pronostico" maxlength="14" placeholder="Ej: 2 - 1" autocomplete="off">
 
       <label for="dedicatoria">Dedicatoria (opcional)</label>
@@ -190,6 +200,8 @@
         <button class="btn" id="descargar">Descargar</button>
         <button class="btn secundario" id="compartir">Compartir</button>
       </div>
+      <p class="reto">🍺 <strong>Reto para tu grupo:</strong> cada uno su entrada con su porra dentro.
+      El que acierte el domingo, bebe gratis a costa de los demás.</p>
 
       <div class="cta-hd" id="zonaCompra">
         🖼️ <strong>¿La quieres para enmarcar?</strong> Versión en alta resolución lista para imprimir en A4/A3,
@@ -206,6 +218,8 @@
       </div>
     </section>
   </div>
+
+  <button class="btn-audio" id="btnAudio" aria-pressed="false">🔇 Ambiente de estadio</button>
 
   <footer>
     Hecho con ❤️ (y nervios) en España por <a href="https://x.com/educasmarIA" rel="noopener">@educasmarIA</a> ·
@@ -440,7 +454,7 @@ function componer(conMarca){
   ctx.setLineDash([]);
 
   const numEntrada = 'Nº ' + (100000 + (d.nombre.length*d.ciudad.length*777)%899999);
-  const etiquetaPron = MODO_CAMPEONES ? 'MARCADOR FINAL: ' : 'MI PRONÓSTICO: ';
+  const etiquetaPron = MODO_CAMPEONES ? 'MARCADOR FINAL: ' : 'PORRA: ';
   const vivio = MODO_CAMPEONES ? 'VIVIÓ LA NOCHE HISTÓRICA DESDE' : 'VIVIÓ LA FINAL DESDE';
   const lineaRival = MODO_CAMPEONES ? null : (RIVAL ? ('CONTRA ' + RIVAL) : 'A POR LA SEGUNDA ESTRELLA');
 
@@ -542,7 +556,7 @@ $('compartir').addEventListener('click', async () => {
   cv.toBlob(async blob => {
     const file = new File([blob],'mi-recuerdo-de-la-final-2026.png',{type:'image/png'});
     if(navigator.canShare && navigator.canShare({files:[file]})){
-      try{ await navigator.share({files:[file], title:'Mi recuerdo de la final', text:'España juega la gran final y yo estaré ahí 🇪🇸'});}catch(e){}
+      try{ await navigator.share({files:[file], title:'Mi recuerdo de la final', text:'🇪🇸 Mi entrada de la final, con mi porra dentro. Haz la tuya gratis en 10 segundos y pásala al grupo: el que acierte el resultado, cerveza pagada 🍺 → https://educastillobtc-ctrl.github.io/recuerdo-final/'});}catch(e){}
     } else {
       const a = document.createElement('a');
       a.download = file.name; a.href = cv.toDataURL('image/png'); a.click();
@@ -592,6 +606,87 @@ if(sessionStorage.getItem('hd_ok') === '1'){
   msg('✅ HD desbloqueado en esta sesión.', 'ok');
   $('descargarHD').style.display = 'block';
 }
+
+/* ---------- ambiente de estadio (sintetizado con Web Audio: sin archivos, sin copyright) ---------- */
+let actx = null, master = null, ambTimers = [], ambNodos = null, ambienteOn = false;
+
+function ruidoBlanco(){
+  const buf = actx.createBuffer(1, actx.sampleRate * 2, actx.sampleRate);
+  const d = buf.getChannelData(0);
+  for(let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  return buf;
+}
+
+function iniciarAmbiente(){
+  actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+  actx.resume();
+  master = actx.createGain();
+  master.gain.setValueAtTime(0.0001, actx.currentTime);
+  master.gain.linearRampToValueAtTime(0.5, actx.currentTime + 1.5);
+  master.connect(actx.destination);
+
+  // 1 · murmullo de grada: ruido filtrado con oleaje lento
+  const grada = actx.createBufferSource(); grada.buffer = ruidoBlanco(); grada.loop = true;
+  const lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 620;
+  const gGrada = actx.createGain(); gGrada.gain.value = 0.16;
+  const oleaje = actx.createOscillator(); oleaje.frequency.value = 0.09;
+  const gOleaje = actx.createGain(); gOleaje.gain.value = 0.05;
+  oleaje.connect(gOleaje); gOleaje.connect(gGrada.gain);
+  grada.connect(lp); lp.connect(gGrada); gGrada.connect(master);
+  grada.start(); oleaje.start();
+  ambNodos = { grada, oleaje };
+
+  // 2 · palmas de estadio: ritmo ♩ ♩ ♩♩♩
+  const palma = t => {
+    const s = actx.createBufferSource(); s.buffer = ruidoBlanco();
+    const bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1900; bp.Q.value = 1.1;
+    const pg = actx.createGain();
+    pg.gain.setValueAtTime(0.42, t);
+    pg.gain.exponentialRampToValueAtTime(0.001, t + 0.09);
+    s.connect(bp); bp.connect(pg); pg.connect(master);
+    s.start(t); s.stop(t + 0.12);
+  };
+  const patronPalmas = () => {
+    const t = actx.currentTime + 0.05, n = 0.42;
+    [0, n*2, n*4, n*5, n*6].forEach(k => palma(t + k));
+  };
+  patronPalmas();
+  ambTimers.push(setInterval(patronPalmas, 4600));
+
+  // 3 · fanfarria de trompeta (melodía original, nuestra)
+  const nota = (f, t, d) => {
+    const o = actx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f;
+    const fl = actx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 2100;
+    const og = actx.createGain();
+    og.gain.setValueAtTime(0.0001, t);
+    og.gain.exponentialRampToValueAtTime(0.15, t + 0.04);
+    og.gain.exponentialRampToValueAtTime(0.001, t + d);
+    o.connect(fl); fl.connect(og); og.connect(master);
+    o.start(t); o.stop(t + d + 0.05);
+  };
+  const fanfarria = () => {
+    const t = actx.currentTime + 0.1;
+    const C4 = 261.63, E4 = 329.63, G4 = 392.00, A4 = 440.00, C5 = 523.25;
+    nota(C4, t, 0.22); nota(E4, t+0.24, 0.22); nota(G4, t+0.48, 0.22);
+    nota(C5, t+0.72, 0.5); nota(A4, t+1.28, 0.18); nota(C5, t+1.5, 0.75);
+  };
+  ambTimers.push(setTimeout(fanfarria, 1500));
+  ambTimers.push(setInterval(fanfarria, 23000));
+}
+
+function pararAmbiente(){
+  ambTimers.forEach(x => { clearInterval(x); clearTimeout(x); });
+  ambTimers = [];
+  if(master) master.gain.linearRampToValueAtTime(0.0001, actx.currentTime + 0.5);
+  setTimeout(() => { try{ ambNodos.grada.stop(); ambNodos.oleaje.stop(); }catch(e){} }, 600);
+}
+
+$('btnAudio').addEventListener('click', () => {
+  ambienteOn = !ambienteOn;
+  $('btnAudio').textContent = ambienteOn ? '🔊 Ambiente: sonando' : '🔇 Ambiente de estadio';
+  $('btnAudio').setAttribute('aria-pressed', String(ambienteOn));
+  ambienteOn ? iniciarAmbiente() : pararAmbiente();
+});
 
 document.fonts.ready.then(dibujar);
 </script>
