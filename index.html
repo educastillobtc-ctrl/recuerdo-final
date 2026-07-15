@@ -25,6 +25,10 @@
     color:var(--crema);
     min-height:100vh;
   }
+  #estadio{
+    position:fixed;inset:0;width:100%;height:100%;
+    z-index:-1;pointer-events:none;
+  }
   .wrap{max-width:1050px;margin:0 auto;padding:28px 18px 60px}
   header{text-align:center;padding:18px 0 26px}
   .badge{
@@ -103,6 +107,31 @@
 </style>
 </head>
 <body>
+<svg id="estadio" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+  <defs>
+    <pattern id="publico" width="26" height="18" patternUnits="userSpaceOnUse">
+      <circle cx="6" cy="9" r="5" fill="rgba(255,220,180,.10)"/>
+      <circle cx="19" cy="4" r="4.5" fill="rgba(255,220,180,.06)"/>
+    </pattern>
+    <linearGradient id="foco" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="rgba(255,214,80,.20)"/>
+      <stop offset="1" stop-color="rgba(255,214,80,0)"/>
+    </linearGradient>
+  </defs>
+  <polygon points="150,-30 330,-30 820,900 420,900" fill="url(#foco)"/>
+  <polygon points="1110,-30 1290,-30 1020,900 620,900" fill="url(#foco)"/>
+  <path d="M0,690 Q360,630 720,678 T1440,668 L1440,900 L0,900 Z" fill="#42070e"/>
+  <path d="M0,690 Q360,630 720,678 T1440,668 L1440,900 L0,900 Z" fill="url(#publico)"/>
+  <g opacity=".85">
+    <g transform="translate(180,676) rotate(-8)"><rect width="46" height="8" fill="#c60b1e"/><rect y="8" width="46" height="14" fill="#ffc400"/><rect y="22" width="46" height="8" fill="#c60b1e"/></g>
+    <g transform="translate(520,660) rotate(5)"><rect width="40" height="7" fill="#c60b1e"/><rect y="7" width="40" height="12" fill="#ffc400"/><rect y="19" width="40" height="7" fill="#c60b1e"/></g>
+    <g transform="translate(890,672) rotate(-4)"><rect width="52" height="9" fill="#c60b1e"/><rect y="9" width="52" height="15" fill="#ffc400"/><rect y="24" width="52" height="9" fill="#c60b1e"/></g>
+    <g transform="translate(1230,662) rotate(7)"><rect width="42" height="7" fill="#c60b1e"/><rect y="7" width="42" height="12" fill="#ffc400"/><rect y="19" width="42" height="7" fill="#c60b1e"/></g>
+  </g>
+  <path d="M0,775 Q400,725 800,765 T1440,752 L1440,900 L0,900 Z" fill="#2e0409"/>
+  <path d="M0,775 Q400,725 800,765 T1440,752 L1440,900 L0,900 Z" fill="url(#publico)" opacity=".8"/>
+  <path d="M0,850 Q480,812 960,842 T1440,834 L1440,900 L0,900 Z" fill="#1e0305"/>
+</svg>
 <div class="wrap">
   <header>
     <div class="badge" id="uiBadge">España jugará la gran final · 19 · 07 · 2026</div>
@@ -193,7 +222,9 @@ const RIVAL            = null;
 const MODO_CAMPEONES   = false;
 const LICENSE_ENDPOINT = 'https://educasmarsmurf.app.n8n.cloud/webhook/recuerdo-hd';
 const URL_COMPRA_HD    = 'https://educasmar.gumroad.com/l/recuerdo-final-hd';
-const CAMINO           = 'EL CAMINO · Cabo Verde 0-0 · Arabia Saudí 4-0 · Uruguay 1-0 · Austria 3-0 · Portugal 1-0 · Bélgica 2-1 · Francia 2-0';
+const CAMINO_L1        = 'Cabo Verde 0-0 · Arabia Saudí 4-0 · Uruguay 1-0 · Austria 3-0';
+const CAMINO_L2        = 'Portugal 1-0 · Bélgica 2-1 · Francia 2-0';
+const PLANTILLA        = 'UNAI SIMÓN · JOAN GARCÍA · DAVID RAYA · CUCURELLA · GRIMALDO · CUBARSÍ · LAPORTE · PUBILL · ERIC GARCÍA · LLORENTE · PEDRO PORRO · PEDRI · FABIÁN RUIZ · ZUBIMENDI · GAVI · RODRI · BAENA · MERINO · OYARZABAL · DANI OLMO · NICO WILLIAMS · YEREMY PINO · FERRAN TORRES · BORJA IGLESIAS · VÍCTOR MUÑOZ · LAMINE YAMAL · SELECCIONADOR: LUIS DE LA FUENTE · ';
 
 const cv = document.getElementById('lienzo');
 let ctx  = cv.getContext('2d');
@@ -308,33 +339,32 @@ function estrellas(cx,cy){
   punta(cx+40, cy, 26, 0);
 }
 
-function codigoBarras(x,y,w,h,semilla){
-  let s = semilla;
-  const rnd = () => (s = (s*9301+49297)%233280) / 233280;
-  ctx.fillStyle = '#1a1a1a';
-  let px = x;
-  while(px < x+w){
-    const bw = 3 + rnd()*9;
-    if(rnd() > .35) ctx.fillRect(px, y, bw, h);
-    px += bw + 3;
+function texturaPlantilla(TX, TY, TW, TH){
+  ctx.save();
+  tarjeta(TX, TY, TW, TH, 36);
+  ctx.clip();
+  ctx.font = '700 20px Archivo';
+  ctx.fillStyle = 'rgba(143,8,21,.09)';
+  ctx.textAlign = 'left';
+  const ancho = ctx.measureText(PLANTILLA).width;
+  let fila = 0;
+  for(let y = TY+96; y < TY+TH-46; y += 38){
+    let x = TX - ((fila*197) % ancho);
+    while(x < TX+TW){
+      ctx.fillText(PLANTILLA, x, y);
+      x += ancho;
+    }
+    fila++;
   }
+  ctx.restore();
 }
 
-function caminoVertical(TX, TY, TH){
-  const sufijo = MODO_CAMPEONES ? ' · Y EL 19 DE JULIO... CAMPEONES DEL MUNDO' : ' · 19 DE JULIO: LA GRAN FINAL';
-  const txt = CAMINO + sufijo;
-  ctx.save();
-  ctx.translate(TX+38, TY+TH/2);
-  ctx.rotate(-Math.PI/2);
-  let size = 20;
-  ctx.font = '600 ' + size + 'px Archivo';
-  while(ctx.measureText(txt).width > TH-120 && size > 12){
-    size -= 1;
-    ctx.font = '600 ' + size + 'px Archivo';
-  }
-  ctx.fillStyle = '#b3a888'; ctx.textAlign = 'center';
-  ctx.fillText(txt, 0, 0);
-  ctx.restore();
+function bloqueCamino(y1, tituloPx, lineaPx, TW){
+  const titulo = MODO_CAMPEONES ? 'EL CAMINO DE LOS CAMPEONES' : 'EL CAMINO A LA FINAL';
+  const l2 = MODO_CAMPEONES ? (CAMINO_L2 + ' · FINAL: ¡CAMPEONES!') : CAMINO_L2;
+  textoCentrado(titulo, y1, '700 ' + tituloPx + 'px Archivo', '#8f0815', TW-160);
+  textoCentrado(CAMINO_L1, y1+42, '600 ' + lineaPx + 'px Archivo', '#6b6250', TW-140);
+  textoCentrado(l2, y1+42+36, '600 ' + lineaPx + 'px Archivo', '#6b6250', TW-140);
 }
 
 function fotoPolaroid(cx, cy, fw, fh, tilt){
@@ -389,6 +419,8 @@ function componer(conMarca){
     ctx.beginPath(); ctx.arc(TX+TW,y,11,0,7); ctx.fill();
   }
 
+  texturaPlantilla(TX, TY, TW, TH);
+
   bandera(TX+40, TY+46, TW-80, 26);
 
   textoCentrado('ENTRADA CONMEMORATIVA', TY+140, '700 34px Archivo', '#8f0815');
@@ -411,33 +443,26 @@ function componer(conMarca){
     textoCentrado('ESPAÑA', TY+470, '900 105px "Archivo Black"', '#c60b1e', TW-120);
     if(MODO_CAMPEONES) estrellas(540, TY+520);
     else if(lineaRival) textoCentrado(lineaRival, TY+528, '700 32px Archivo', '#1a1a1a', TW-140);
+    textoCentrado('SELECCIONADOR: LUIS DE LA FUENTE', TY+568, '600 24px Archivo', '#6b6250', TW-140);
 
-    fotoPolaroid(540, TY+860, 620, 480, -0.035);
+    fotoPolaroid(540, TY+830, 600, 430, -0.035);
 
-    textoCentrado('ESTA ENTRADA CERTIFICA QUE', TY+1150, '600 26px Archivo', '#6b6250');
-    textoCentrado(d.nombre, TY+1216, '900 60px "Archivo Black"', '#1a1a1a', TW-140);
-    textoCentrado(vivio + ' ' + d.lugar.toUpperCase() + ' · ' + d.ciudad, TY+1272, '700 30px Archivo', '#8f0815', TW-140);
+    textoCentrado('ESTA ENTRADA CERTIFICA QUE', TY+1110, '600 26px Archivo', '#6b6250');
+    textoCentrado(d.nombre, TY+1174, '900 58px "Archivo Black"', '#1a1a1a', TW-140);
+    textoCentrado(vivio + ' ' + d.lugar.toUpperCase() + ' · ' + d.ciudad, TY+1230, '700 30px Archivo', '#8f0815', TW-140);
     if(d.dedicatoria){
-      textoCentrado('«' + d.dedicatoria + '»', TY+1318, 'italic 600 28px Archivo', '#6b6250', TW-160);
+      textoCentrado('«' + d.dedicatoria + '»', TY+1276, 'italic 600 28px Archivo', '#6b6250', TW-160);
     }
-
-    const filaY = TY+1372;
-    ctx.textAlign='center'; ctx.fillStyle='#6b6250'; ctx.font='600 22px Archivo';
-    ctx.fillText('SECCIÓN', TX+190, filaY);
-    ctx.fillText('FILA', TX+470, filaY);
-    ctx.fillText('ASIENTO', TX+750, filaY);
-    ctx.fillStyle='#1a1a1a'; ctx.font='900 38px "Archivo Black"';
-    ctx.fillText(MODO_CAMPEONES ? 'GLORIA' : 'CORAZÓN', TX+190, filaY+44);
-    ctx.fillText('2026', TX+470, filaY+44);
-    ctx.fillText(MODO_CAMPEONES ? 'ETERNO' : 'VIP', TX+750, filaY+44);
-
     const lineaDatos = d.pronostico ? (etiquetaPron + d.pronostico + '  ·  ' + numEntrada) : numEntrada;
-    textoCentrado(lineaDatos, TY+1462, '600 22px Archivo', '#6b6250', TW-140);
+    textoCentrado(lineaDatos, TY+1322, '600 24px Archivo', '#6b6250', TW-140);
+
+    bloqueCamino(TY+1382, 26, 26, TW);
   } else {
     /* --- maquetación SIN foto: la original --- */
     textoCentrado('ESPAÑA', TY+500, '900 130px "Archivo Black"', '#c60b1e', TW-120);
     if(MODO_CAMPEONES) estrellas(540, TY+560);
     else if(lineaRival) textoCentrado(lineaRival, TY+570, '700 38px Archivo', '#1a1a1a', TW-140);
+    textoCentrado('SELECCIONADOR: LUIS DE LA FUENTE', TY+612, '600 26px Archivo', '#6b6250', TW-140);
 
     ctx.strokeStyle='#d9cdb0'; ctx.setLineDash([12,10]);
     ctx.beginPath(); ctx.moveTo(TX+60,TY+640); ctx.lineTo(TX+TW-60,TY+640); ctx.stroke();
@@ -466,12 +491,11 @@ function componer(conMarca){
     ctx.fillText('2026', TX+470, filaY+52);
     ctx.fillText(MODO_CAMPEONES ? 'ETERNO' : 'VIP', TX+750, filaY+52);
 
-    codigoBarras(TX+140, TY+1300, TW-280, 110, d.nombre.length*7+13);
-    textoCentrado(numEntrada, TY+1450, '600 26px Archivo', '#6b6250');
+    bloqueCamino(TY+1312, 28, 28, TW);
+    textoCentrado(numEntrada, TY+1452, '600 26px Archivo', '#6b6250');
   }
 
   bandera(TX+40, TY+TH-72, TW-80, 26);
-  caminoVertical(TX, TY, TH);
 
   if(conMarca){
     ctx.save();
