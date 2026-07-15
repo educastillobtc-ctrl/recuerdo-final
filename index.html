@@ -91,6 +91,8 @@
   }
   .acciones{display:flex;gap:10px;max-width:380px;margin:14px auto 0}
   .acciones .btn{margin-top:0}
+  .fila3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:2px}
+  .fila3 select,.fila3 input{padding:10px 8px;font-size:.86rem}
   .reto{max-width:380px;margin:12px auto 0;font-size:.85rem;opacity:.88;text-align:left}
   .reto strong{color:var(--amarillo)}
   .btn-audio{
@@ -198,6 +200,39 @@
         <option value="fiesta">Rojo fiesta</option>
       </select>
 
+      <label>Sección · Fila · Asiento (opcional)</label>
+      <div class="fila3">
+        <select id="secSel" aria-label="Sección">
+          <option>CORAZÓN</option>
+          <option>FONDO SUR</option>
+          <option>TRIBUNA</option>
+          <option>EL SOFÁ</option>
+          <option>LA BARRA DEL BAR</option>
+          <option value="otro">✏️ Otra…</option>
+        </select>
+        <select id="filaSel" aria-label="Fila">
+          <option>2026</option>
+          <option>1</option>
+          <option>10</option>
+          <option>ÚLTIMA</option>
+          <option>DEL MEDIO</option>
+          <option value="otro">✏️ Otra…</option>
+        </select>
+        <select id="asiSel" aria-label="Asiento">
+          <option>VIP</option>
+          <option>DE PIE</option>
+          <option>EL DE SIEMPRE</option>
+          <option>7</option>
+          <option>10</option>
+          <option value="otro">✏️ Otro…</option>
+        </select>
+      </div>
+      <div class="fila3">
+        <input type="text" id="secOtro" maxlength="14" placeholder="Tu sección" style="display:none" autocomplete="off">
+        <input type="text" id="filaOtro" maxlength="14" placeholder="Tu fila" style="display:none" autocomplete="off">
+        <input type="text" id="asiOtro" maxlength="14" placeholder="Tu asiento" style="display:none" autocomplete="off">
+      </div>
+
       <button class="btn" id="generar">Generar mi entrada</button>
     </section>
 
@@ -274,6 +309,13 @@ $('lugar').addEventListener('change', e => {
 
 $('fondoSel').addEventListener('change', () => dibujar());
 
+[['secSel','secOtro'],['filaSel','filaOtro'],['asiSel','asiOtro']].forEach(([sel, otro]) => {
+  $(sel).addEventListener('change', e => {
+    $(otro).style.display = e.target.value === 'otro' ? 'block' : 'none';
+    dibujar();
+  });
+});
+
 /* ---------- foto del usuario (solo en local, nunca se sube) ---------- */
 let fotoImg = null;
 
@@ -315,14 +357,26 @@ function limpiaLugar(s){
   return t || 'Mi sitio favorito';
 }
 
+function valorTriple(selId, otroId, porDefecto){
+  const v = $(selId).value;
+  if(v === 'otro') return ($(otroId).value.trim() || porDefecto).toUpperCase();
+  return v;
+}
+
 function datos(){
   const lugarSel = $('lugar').value;
+  let seccion = valorTriple('secSel', 'secOtro', 'CORAZÓN');
+  let fila    = valorTriple('filaSel', 'filaOtro', '2026');
+  let asiento = valorTriple('asiSel', 'asiOtro', 'VIP');
+  if(MODO_CAMPEONES && seccion === 'CORAZÓN') seccion = 'GLORIA';
+  if(MODO_CAMPEONES && asiento === 'VIP') asiento = 'ETERNO';
   return {
     nombre: ($('nombre').value.trim() || 'UN AFICIONADO').toUpperCase(),
     lugar: (lugarSel === 'otro' ? limpiaLugar($('lugarOtro').value) : lugarSel),
     ciudad: ($('ciudad').value.trim() || 'España').toUpperCase(),
     pronostico: $('pronostico').value.trim(),
-    dedicatoria: $('dedicatoria').value.trim()
+    dedicatoria: $('dedicatoria').value.trim(),
+    seccion, fila, asiento
   };
 }
 
@@ -495,6 +549,16 @@ function fotoPolaroid(cx, cy, fw, fh, tilt){
   ctx.restore();
 }
 
+function textoCol(txt, x, y, basePx, maxW){
+  let size = basePx;
+  ctx.font = '900 ' + size + 'px "Archivo Black"';
+  while(ctx.measureText(txt).width > maxW && size > 18){
+    size -= 2;
+    ctx.font = '900 ' + size + 'px "Archivo Black"';
+  }
+  ctx.fillText(txt, x, y);
+}
+
 function textoCentrado(txt, y, fuente, color, maxW){
   ctx.font = fuente; ctx.fillStyle = color; ctx.textAlign = 'center';
   if(maxW){
@@ -555,16 +619,17 @@ function componer(conMarca){
 
     fotoPolaroid(540, TY+830, 600, 430, -0.035);
 
-    textoCentrado('ESTA ENTRADA CERTIFICA QUE', TY+1110, '600 26px Archivo', '#6b6250');
-    textoCentrado(d.nombre, TY+1174, '900 58px "Archivo Black"', '#1a1a1a', TW-140);
-    textoCentrado(vivio + ' ' + d.lugar.toUpperCase() + ' · ' + d.ciudad, TY+1230, '700 30px Archivo', '#8f0815', TW-140);
+    textoCentrado('ESTA ENTRADA CERTIFICA QUE', TY+1104, '600 26px Archivo', '#6b6250');
+    textoCentrado(d.nombre, TY+1164, '900 56px "Archivo Black"', '#1a1a1a', TW-140);
+    textoCentrado(vivio + ' ' + d.lugar.toUpperCase() + ' · ' + d.ciudad, TY+1218, '700 29px Archivo', '#8f0815', TW-140);
     if(d.dedicatoria){
-      textoCentrado('«' + d.dedicatoria + '»', TY+1276, 'italic 600 28px Archivo', '#6b6250', TW-160);
+      textoCentrado('«' + d.dedicatoria + '»', TY+1262, 'italic 600 27px Archivo', '#6b6250', TW-160);
     }
     const lineaDatos = d.pronostico ? (etiquetaPron + d.pronostico + '  ·  ' + numEntrada) : numEntrada;
-    textoCentrado(lineaDatos, TY+1322, '600 24px Archivo', '#6b6250', TW-140);
+    textoCentrado(lineaDatos, TY+1306, '600 24px Archivo', '#6b6250', TW-140);
+    textoCentrado('SECCIÓN ' + d.seccion + ' · FILA ' + d.fila + ' · ASIENTO ' + d.asiento, TY+1348, '700 24px Archivo', '#1a1a1a', TW-140);
 
-    bloqueCamino(TY+1382, 26, 26, TW);
+    bloqueCamino(TY+1396, 26, 24, TW);
   } else {
     /* --- maquetación SIN foto: la original --- */
     textoCentrado('ESPAÑA', TY+500, '900 130px "Archivo Black"', '#c60b1e', TW-120);
@@ -594,10 +659,10 @@ function componer(conMarca){
     ctx.fillText('SECCIÓN', TX+190, filaY);
     ctx.fillText('FILA', TX+470, filaY);
     ctx.fillText('ASIENTO', TX+750, filaY);
-    ctx.fillStyle='#1a1a1a'; ctx.font='900 44px "Archivo Black"';
-    ctx.fillText(MODO_CAMPEONES ? 'GLORIA' : 'CORAZÓN', TX+190, filaY+52);
-    ctx.fillText('2026', TX+470, filaY+52);
-    ctx.fillText(MODO_CAMPEONES ? 'ETERNO' : 'VIP', TX+750, filaY+52);
+    ctx.fillStyle='#1a1a1a';
+    textoCol(d.seccion, TX+190, filaY+52, 44, 268);
+    textoCol(d.fila, TX+470, filaY+52, 44, 268);
+    textoCol(d.asiento, TX+750, filaY+52, 44, 268);
 
     bloqueCamino(TY+1312, 28, 28, TW);
     textoCentrado(numEntrada, TY+1452, '600 26px Archivo', '#6b6250');
