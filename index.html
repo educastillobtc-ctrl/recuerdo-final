@@ -312,6 +312,8 @@
 const URL_WEB          = 'educasmaria.github.io/recuerdo-final';
 const MARCA_AGUA       = '@educasmarIA';
 const RIVAL            = 'ARGENTINA';
+const BANDERA_ES       = [{c:'#c60b1e',w:1},{c:'#ffc400',w:2},{c:'#c60b1e',w:1}];   // rojo-amarillo-rojo (1:2:1)
+const BANDERA_AR       = [{c:'#6ca8dc',w:1},{c:'#ffffff',w:1},{c:'#6ca8dc',w:1}];   // celeste-blanco-celeste (1:1:1)
 const MODO_CAMPEONES   = false;
 const LICENSE_ENDPOINT = 'https://educasmarsmurf.app.n8n.cloud/webhook/recuerdo-hd';
 const URL_COMPRA_HD    = 'https://educasmar.gumroad.com/l/recuerdo-final-hd';
@@ -670,6 +672,36 @@ function textoCentrado(txt, y, fuente, color, maxW){
   ctx.fillText(txt, 540, y);
 }
 
+function textoBandera(txt, y, px, franjas, maxW){
+  // rellena el texto con las franjas HORIZONTALES de una bandera + contorno oscuro legible
+  ctx.textAlign = 'center';
+  let size = px;
+  ctx.font = '900 ' + size + 'px "Archivo Black"';
+  if(maxW){
+    while(ctx.measureText(txt).width > maxW && size > 28){
+      size -= 2;
+      ctx.font = '900 ' + size + 'px "Archivo Black"';
+    }
+  }
+  const m = ctx.measureText(txt);
+  const asc = m.actualBoundingBoxAscent || size*0.72;
+  const desc = m.actualBoundingBoxDescent || size*0.04;
+  const g = ctx.createLinearGradient(0, y - asc, 0, y + desc);
+  const total = franjas.reduce((a,f)=>a+f.w, 0);
+  let acc = 0;
+  for(const f of franjas){
+    g.addColorStop(acc/total, f.c);
+    acc += f.w;
+    g.addColorStop(acc/total, f.c);
+  }
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = Math.max(5, size*0.055);
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.strokeText(txt, 540, y);
+  ctx.fillStyle = g;
+  ctx.fillText(txt, 540, y);
+}
+
 /* ---------- composición ---------- */
 function componer(conMarca){
   const d = datos();
@@ -710,10 +742,16 @@ function componer(conMarca){
 
   if(fotoImg){
     /* --- maquetación CON foto: polaroid protagonista --- */
-    textoCentrado('ESPAÑA', TY+470, '900 105px "Archivo Black"', '#c60b1e', TW-120);
-    if(MODO_CAMPEONES) estrellas(540, TY+520);
-    else if(lineaRival) textoCentrado(lineaRival, TY+528, '700 32px Archivo', '#1a1a1a', TW-140);
-    textoCentrado('SELECCIONADOR: LUIS DE LA FUENTE', TY+568, '600 24px Archivo', '#6b6250', TW-140);
+    if(MODO_CAMPEONES){
+      textoCentrado('ESPAÑA', TY+470, '900 105px "Archivo Black"', '#c60b1e', TW-120);
+      estrellas(540, TY+520);
+      textoCentrado('SELECCIONADOR: LUIS DE LA FUENTE', TY+566, '600 22px Archivo', '#6b6250', TW-140);
+    } else {
+      textoBandera('ESPAÑA', TY+458, 94, BANDERA_ES, TW-130);
+      textoCentrado('C O N T R A', TY+500, '800 22px Archivo', '#8f0815', TW-160);
+      textoBandera('ARGENTINA', TY+558, 58, BANDERA_AR, TW-150);
+      textoCentrado('SELECCIONADOR: LUIS DE LA FUENTE', TY+596, '600 21px Archivo', '#6b6250', TW-140);
+    }
 
     fotoPolaroid(540, TY+830, 600, 430, -0.035);
 
@@ -730,20 +768,25 @@ function componer(conMarca){
     bloqueCamino(TY+1396, 26, 24, TW);
   } else {
     /* --- maquetación SIN foto: la original --- */
-    textoCentrado('ESPAÑA', TY+500, '900 130px "Archivo Black"', '#c60b1e', TW-120);
-    if(MODO_CAMPEONES) estrellas(540, TY+560);
-    else if(lineaRival) textoCentrado(lineaRival, TY+570, '700 38px Archivo', '#1a1a1a', TW-140);
-    textoCentrado('SELECCIONADOR: LUIS DE LA FUENTE', TY+612, '600 26px Archivo', '#6b6250', TW-140);
+    if(MODO_CAMPEONES){
+      textoCentrado('ESPAÑA', TY+500, '900 130px "Archivo Black"', '#c60b1e', TW-120);
+      estrellas(540, TY+560);
+    } else {
+      textoBandera('ESPAÑA', TY+488, 120, BANDERA_ES, TW-120);
+      textoCentrado('C O N T R A', TY+540, '800 28px Archivo', '#8f0815', TW-150);
+      textoBandera('ARGENTINA', TY+612, 74, BANDERA_AR, TW-140);
+    }
+    textoCentrado('SELECCIONADOR: LUIS DE LA FUENTE', TY+656, '600 24px Archivo', '#6b6250', TW-140);
 
     ctx.strokeStyle='#d9cdb0'; ctx.setLineDash([12,10]);
-    ctx.beginPath(); ctx.moveTo(TX+60,TY+640); ctx.lineTo(TX+TW-60,TY+640); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(TX+60,TY+686); ctx.lineTo(TX+TW-60,TY+686); ctx.stroke();
     ctx.setLineDash([]);
 
-    textoCentrado('ESTA ENTRADA CERTIFICA QUE', TY+720, '600 30px Archivo', '#6b6250');
-    textoCentrado(d.nombre, TY+820, '900 82px "Archivo Black"', '#1a1a1a', TW-140);
-    textoCentrado(vivio, TY+900, '600 30px Archivo', '#6b6250');
-    textoCentrado(d.lugar.toUpperCase(), TY+970, '700 46px Archivo', '#8f0815', TW-140);
-    textoCentrado(d.ciudad, TY+1034, '700 38px Archivo', '#1a1a1a', TW-140);
+    textoCentrado('ESTA ENTRADA CERTIFICA QUE', TY+736, '600 30px Archivo', '#6b6250');
+    textoCentrado(d.nombre, TY+832, '900 80px "Archivo Black"', '#1a1a1a', TW-140);
+    textoCentrado(vivio, TY+906, '600 30px Archivo', '#6b6250');
+    textoCentrado(d.lugar.toUpperCase(), TY+972, '700 44px Archivo', '#8f0815', TW-140);
+    textoCentrado(d.ciudad, TY+1032, '700 38px Archivo', '#1a1a1a', TW-140);
 
     if(d.pronostico){
       textoCentrado(etiquetaPron + d.pronostico, TY+1104, '700 32px Archivo', '#6b6250', TW-140);
